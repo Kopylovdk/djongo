@@ -18,7 +18,9 @@ from sqlparse import tokens
 from sqlparse.sql import (
     Identifier, Parenthesis,
     Where,
-    Statement)
+    Statement,
+    Values,
+)
 
 from ..exceptions import SQLDecodeError, MigrationError, print_warn
 from .functions import SQLFunc
@@ -128,7 +130,7 @@ class SelectQuery(DQLQuery):
             elif tok.match(tokens.Keyword, 'LIMIT'):
                 self.limit = LimitConverter(self, statement)
 
-            elif tok.match(tokens.Keyword, 'ORDER'):
+            elif tok.match(tokens.Keyword, 'ORDER BY'):
                 self.order = OrderConverter(self, statement)
 
             elif tok.match(tokens.Keyword, 'OFFSET'):
@@ -300,7 +302,6 @@ class UpdateQuery(DMLQuery):
         return self.result.matched_count
 
     def parse(self):
-
         statement = SQLStatement(self.statement)
 
         for tok in statement:
@@ -354,18 +355,22 @@ class InsertQuery(DMLQuery):
         self._cols = [token.column for token in SQLToken.tokens2sql(tok[1], self)]
 
     def _fill_values(self, statement: SQLStatement):
-        for tok in statement:
-            if isinstance(tok, Parenthesis):
-                placeholder = SQLToken.token2sql(tok, self)
-                values = []
-                for index in placeholder:
-                    if isinstance(index, int):
-                        values.append(self.params[index])
-                    else:
-                        values.append(index)
-                self._values.append(values)
-            elif not tok.match(tokens.Keyword, 'VALUES'):
-                raise SQLDecodeError
+        tok: sqlparse.sql.Values = statement.next()
+        if isinstance(tok, Values):
+            for token in tok.tokens:
+                if isinstance(token, Parenthesis):
+                    placeholder = SQLToken.token2sql(token, self)
+                    values = []
+                    for index in placeholder:
+                        if isinstance(index, int):
+                            values.append(self.params[index])
+                        else:
+                            values.append(index)
+                    self._values.append(values)
+                elif token.match(tokens.Whitespace, token.value):
+                    continue
+                elif not token.match(tokens.Keyword, 'VALUES'):
+                    raise SQLDecodeError
 
     def execute(self):
         docs = []
@@ -938,6 +943,3 @@ class Query:
         'DROP': _drop,
         'ALTER': _alter
     }
-
-
-
