@@ -1,6 +1,6 @@
 <h1>djongo</h1>
 
-rev '1.3.7' - fix combatable w sqlparse 0.5.0 (tested w django 4.2.11)
+rev '1.3.7' - fix compatibility w sqlparse 0.5.0 (tested w django 4.2.11)
 
 [![Build Status](https://travis-ci.com/nesdis/djongo.svg?branch=master)](https://travis-ci.com/nesdis/djongo)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
